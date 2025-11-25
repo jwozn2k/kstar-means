@@ -45,19 +45,13 @@ datasets_list = [
 # Testowanie
 fig, axes = plt.subplots(3, 4, figsize=(20, 15))
 axes = axes.flatten()
-
-print("=" * 70)
-print("TEST K*-MEANS NA KLASYCZNYCH BENCHMARKACH")
-print("=" * 70)
-
 results = []
 
 for idx, (name, (X_raw, y_true), k_true) in enumerate(datasets_list):
     # Normalizacja
     X = StandardScaler().fit_transform(X_raw)
 
-    print(f"\n{idx + 1}. {name}")
-    print("-" * 70)
+    print(f"{idx + 1}. {name}")
 
     # K*-Means
     kstar = KStarMeans(random_state=0, patience=5)
@@ -66,13 +60,8 @@ for idx, (name, (X_raw, y_true), k_true) in enumerate(datasets_list):
 
     k_found = kstar.n_clusters_
 
-    print(f"Prawdziwe k: {k_true}")
-    print(f"Znalezione k*: {k_found}")
-    print(f"Iteracje: {len(kstar.cost_history_)}")
-
-    # Rozmiary klastrów
-    sizes = [np.sum(pred == i) for i in range(k_found)]
-    print(f"Rozmiary klastrów: {sizes}")
+    print(f"   Prawdziwe k: {k_true}, Znalezione k*: {k_found}, Iteracje: {len(kstar.cost_history_)}")
+    print(f"   Rozmiary klastrów: {[np.sum(pred == i) for i in range(k_found)]}")
 
     results.append({
         'name': name,
@@ -86,8 +75,8 @@ for idx, (name, (X_raw, y_true), k_true) in enumerate(datasets_list):
     if name == 'No Structure':
         ax.scatter(X[:, 0], X[:, 1], c='gray', alpha=0.5, s=20)
     else:
-        scatter = ax.scatter(X[:, 0], X[:, 1], c=y_true, cmap='tab10',
-                             alpha=0.6, s=20, edgecolors='k', linewidth=0.3)
+        ax.scatter(X[:, 0], X[:, 1], c=y_true, cmap='tab10',
+                   alpha=0.6, s=20, edgecolors='k', linewidth=0.3)
     ax.set_title(f'{name}\nPrawdziwe (k={k_true})', fontsize=11)
     ax.set_xlim(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5)
     ax.set_ylim(X[:, 1].min() - 0.5, X[:, 1].max() + 0.5)
@@ -96,8 +85,8 @@ for idx, (name, (X_raw, y_true), k_true) in enumerate(datasets_list):
 
     # Wizualizacja - K*-Means
     ax = axes[idx * 2 + 1]
-    scatter = ax.scatter(X[:, 0], X[:, 1], c=pred, cmap='tab10',
-                         alpha=0.6, s=20, edgecolors='k', linewidth=0.3)
+    ax.scatter(X[:, 0], X[:, 1], c=pred, cmap='tab10',
+               alpha=0.6, s=20, edgecolors='k', linewidth=0.3)
 
     # Centroidy
     if k_found > 0:
@@ -108,55 +97,33 @@ for idx, (name, (X_raw, y_true), k_true) in enumerate(datasets_list):
     # Kolor tytułu w zależności od wyniku
     if k_found == k_true:
         color = 'green'
-        status = '✓'
+        diff = ''
     else:
         color = 'orange'
-        status = f'✗ ({k_found - k_true:+d})'
+        diff = f' ({k_found - k_true:+d})'
 
-    ax.set_title(f'K*-Means (k*={k_found}) {status}',
-                 color=color, fontweight='bold', fontsize=11)
+    ax.set_title(f'K*-Means (k*={k_found}){diff}', color=color, fontweight='bold', fontsize=11)
     ax.set_xlim(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5)
     ax.set_ylim(X[:, 1].min() - 0.5, X[:, 1].max() + 0.5)
     ax.set_xticks([])
     ax.set_yticks([])
 
 plt.tight_layout()
-
-output_path = 'kstar_benchmarks.png'
-
+output_path = './img/kstar_benchmarks.png'
 plt.savefig(output_path, dpi=150, bbox_inches='tight')
-print(f"\n{'=' * 70}")
-print(f"Wykres zapisany: {output_path}")
+print(f"\nZapisano: {output_path}")
 
 # Podsumowanie
-print("\n" + "=" * 70)
-print("PODSUMOWANIE")
-print("=" * 70)
-print(f"{'Dataset':<20} {'k prawdziwe':<15} {'k* znalezione':<15} {'Status':<15}")
-print("-" * 70)
-
+print("\nPodsumowanie:")
+print(f"{'Dataset':<20} {'k_true':<10} {'k_found':<10} {'Zgodność':<10}")
 correct = 0
 for r in results:
-    status = '✓ DOBRZE' if r['match'] else f"✗ BŁĄD ({r['k_found'] - r['k_true']:+d})"
+    match_str = 'TAK' if r['match'] else 'NIE'
     if r['match']:
         correct += 1
-    print(f"{r['name']:<20} {r['k_true']:<15} {r['k_found']:<15} {status:<15}")
+    print(f"{r['name']:<20} {r['k_true']:<10} {r['k_found']:<10} {match_str:<10}")
 
 accuracy = correct / len(results) * 100
-print("-" * 70)
-print(f"Dokładność: {correct}/{len(results)} ({accuracy:.1f}%)")
-
-print("\n" + "=" * 70)
-print("ANALIZA")
-print("=" * 70)
-print("K*-Means (jak standardowy K-Means) najlepiej działa na:")
-print("  ✓ Sferycznych/okrągłych klastrach")
-print("  ✓ Podobnej gęstości/wielkości klastrów")
-print("  ✓ Dobrze rozdzielonych danych")
-print("\nMa trudności z:")
-print("  ✗ Nieregularnymi kształtami (moons, circles)")
-print("  ✗ Różnymi gęstościami")
-print("  ✗ Brakiem struktury")
-print("\nTo ograniczenie założeń K-Means, nie specyficzne dla K*-Means!")
+print(f"\nDokładność: {correct}/{len(results)} ({accuracy:.1f}%)")
 
 plt.show()
