@@ -373,35 +373,62 @@ class KStarMeans:
         - index_cost: bits to encode cluster assignment for each point
         - residual_cost: bits to encode displacement from centroid
         """
+        return self._compute_mdl_for_config(X, self.centroids_, self.labels_)
+
+    def _compute_mdl_for_config(self, X: np.ndarray, centroids: np.ndarray,
+                                labels: np.ndarray) -> float:
+        """
+        Compute MDL cost for a given clustering configuration.
+
+        Based on Algorithm 1 from the K*-Means paper:
+        MDL = model_cost + index_cost + residual_cost
+
+        Args:
+            X: Data matrix (n_samples, n_features)
+            centroids: Cluster centroids (k, n_features)
+            labels: Cluster assignments (n_samples,)
+
+        Returns:
+            Total MDL cost
+        """
         n_samples, n_features = X.shape
-        k = len(self.centroids_)
+        k = len(centroids)
 
         # Compute floating point precision from data
-        # Find minimum non-zero pairwise distance as precision
+        # floatprecision = -log of the minimum distance between any values in X
         unique_values = np.unique(X.flatten())
         if len(unique_values) > 1:
-            min_diff = np.min(np.diff(np.sort(unique_values)))
-            float_precision = -np.log2(min_diff) if min_diff > 0 else 32
+            sorted_values = np.sort(unique_values)
+            min_diff = np.min(np.diff(sorted_values))
+            if min_diff > 0:
+                floatprecision = -np.log2(min_diff)
+            else:
+                floatprecision = 32.0
         else:
-            float_precision = 32  # Default precision
+            floatprecision = 32.0
 
-        # Model cost: k centroids * d dimensions * precision
-        data_range = np.max(X) - np.min(X)
-        float_cost = data_range / (2 ** -float_precision)
-        model_cost = k * n_features * float_cost
+        # Model cost: k centroids * d dimensions * floatcost
+        data_range = np.ptp(X)  # max - min
+        if data_range > 0 and floatprecision > 0:
+            floatcost = data_range / floatprecision
+        else:
+            floatcost = 1.0
 
-        # Index cost: n points * log2(k) bits
-        index_cost = n_samples * np.log2(k) if k > 1 else 0
+        model_cost = k * n_features * floatcost
 
-        # Residual cost: sum of squared distances / 2 + n*d*log(2π)
+        # Index cost: n points * log2(k) bits to encode cluster assignments
+        index_cost = n_samples * np.log2(k) if k > 1 else 0.0
+
+        # Residual cost: |X|*d*log(2π) + c/2
+        # where c is the sum of squared distances
         total_ss = 0.0
         for i in range(k):
-            cluster_mask = self.labels_ == i
+            cluster_mask = labels == i
             cluster_points = X[cluster_mask]
             if len(cluster_points) > 0:
-                total_ss += self._compute_cluster_ss(cluster_points, self.centroids_[i])
+                total_ss += self._compute_cluster_ss(cluster_points, centroids[i])
 
-        residual_cost = n_samples * n_features * np.log(2 * np.pi) + total_ss / 2
+        residual_cost = n_samples * n_features * np.log(2 * np.pi) + total_ss / 2.0
 
         return model_cost + index_cost + residual_cost
 
