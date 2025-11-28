@@ -55,10 +55,13 @@ nmi = normalized_mutual_info_score(y_true, kstar.labels_)  # 0.661
 
 ![Koszt MDL](img/iris_mdl_cost.png)
 
-Wykres pokazuje jak koszt MDL spada w kolejnych iteracjach:
-- Na początku duży spadek (algorytm znajduje podstawową strukturę)
-- Potem stabilizacja (osiągnięto optimum)
-- Algorytm zatrzymuje się po 5 iteracjach bez poprawy (`patience=5`)
+Wykres pokazuje ewolucję kosztu MDL:
+- **Iteracja 0**: MDL ≈ 1408 (k=1, wszystko w jednym klastrze)
+- **Iteracja 1**: MDL ≈ 1424 (wzrost! k=1→2, model_cost rośnie szybciej niż spada residual_cost)
+- **Iteracja 2**: MDL ≈ 1418 (spadek, k=2→3, teraz spadek residual_cost dominuje)
+- **Iteracje 3-5**: MDL ≈ 1417 (stabilizacja przy k=3, optimum osiągnięte)
+
+Algorytm zatrzymuje się gdy nie ma poprawy przez `patience=5` iteracji.
 
 ### img/iris_clusters.png
 
@@ -142,8 +145,10 @@ Test na 6 różnych zbiorach danych:
 - No structure (losowy szum)
 
 **Wyniki** w `img/kstar_benchmarks.png`:
-- ✓ Świetnie na regularnych blobsach
-- ✗ Słabo na circles/moons (nieregularne kształty)
+- ✓ Dobrze na: Varied Density (k*=3), Moons (k*=2)
+- ✗ Błędy na: Circles (k*=3 zamiast 2), Blobs (k*=2 zamiast 3), No Structure (k*=3 zamiast 1)
+
+**Ogólna dokładność**: 2/6 = 33.3%
 
 To pokazuje ograniczenia K*-Means - dziedziczy założenia K-Means o sferycznych klastrach.
 

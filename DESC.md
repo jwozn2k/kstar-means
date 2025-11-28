@@ -37,17 +37,20 @@ MDL = model_cost + index_cost + residual_cost
 ```
 
 1. **Model cost**: koszt przechowania k centroidów
+   - `k × d × floatcost`, gdzie floatcost zależy od zakresu danych i precyzji
    - Więcej klastrów --> większy model --> wyższy koszt
 
 2. **Index cost**: koszt przypisania każdego punktu do klastra
-   - n punktów × log₂(k) bitów
+   - `n × log₂(k)` bitów
    - Więcej klastrów --> wyższy koszt indeksowania
 
 3. **Residual cost**: koszt zakodowania odchyleń od centroidów
-   - Suma kwadratów odległości / 2
+   - `n × d × log(2π) + Σ(odległości²) / 2`
    - Mniej klastrów --> gorsze dopasowanie → wyższy koszt
 
-Algorytm szuka k, które minimalizuje sumę tych trzech składników.
+**Balans**: Za mało klastrów → wysoki residual_cost. Za dużo klastrów → wysoki model_cost + index_cost.
+
+Algorytm szuka k, które minimalizuje całkowity koszt MDL.
 
 ### Przebieg algorytmu
 
@@ -117,10 +120,12 @@ Po uruchomieniu `iris_data_analysis.py`, `blobs_data_analysis.py` i `test_benchm
 - Czasem scala dwa blisko siebie klastry
 
 ### Benchmarki (6 różnych zbiorów)
-- **Blobs (regularne)**: ✓ k* = k_true
-- **Varied density**: ✓ k* = k_true
-- **Circles**: ✗ (nieregularny kształt)
-- **Moons**: ✗ (nieregularny kształt)
+- **Varied density**: ✓ k* = 3 = k_true
+- **Moons**: ✓ k* = 2 = k_true
+- **Circles**: ✗ k* = 3, k_true = 2 (nieregularny kształt)
+- **Blobs**: ✗ k* = 2, k_true = 3 (trudny przypadek)
+- **Anisotropic**: ✗ k* = 2, k_true = 3
+- **No Structure**: ✗ k* = 3, k_true = 1 (szum)
 
 **Wniosek**: K*-Means działa świetnie na danych które pasują do założeń K-Means (sferyczne klastry). Dla dziwnych kształtów lepiej użyć DBSCAN czy spectral clustering.
 
