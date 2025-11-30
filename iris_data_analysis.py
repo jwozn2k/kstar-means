@@ -4,6 +4,7 @@ Szczegółowa analiza algorytmu K*-Means na zbiorze Iris.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.datasets import load_iris
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -50,6 +51,20 @@ print(f"NMI: {nmi:.3f}")
 # Macierz pomyłek
 cm = confusion_matrix(y_true, labels_pred)
 print(f"\nMacierz pomyłek:\n{cm}")
+
+# Wizualizacja macierzy pomyłek
+fig_cm = plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=[f'Klaster {i}' for i in range(k_star)],
+            yticklabels=species_names,
+            cbar_kws={'label': 'Liczba próbek'},
+            linewidths=0.5, linecolor='gray')
+plt.xlabel('Predykcja (klaster)', fontsize=12)
+plt.ylabel('Rzeczywista klasa (gatunek)', fontsize=12)
+plt.title('Macierz pomyłek K*-Means (Iris)', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig('./img/iris_confusion_matrix.png', dpi=150, bbox_inches='tight')
+print("Zapisano: iris_confusion_matrix.png")
 
 # Analiza po gatunkach
 print("\nDokładność per gatunek:")
